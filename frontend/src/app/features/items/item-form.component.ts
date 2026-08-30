@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Item } from '../../core/models';
+import { ApiError, describeError } from '../../shared/api/api-client.service';
+import { ItemsApi } from '../../shared/api/items-api.service';
+
+// Fixed vocabulary, not API data — kept out of the signal<T[]> data contract.
+const UNITS: readonly string[] = ['each', 'roll', 'box', 'pair', 'kg', 'litre', 'metre', 'pallet'];
 
 @Component({
   selector: 'app-item-form',
@@ -13,21 +17,10 @@ import { Item } from '../../core/models';
 export class ItemFormComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-
-  readonly items = signal<Item[]>([
-    { id: 'itm-1', sku: 'SKU-001', name: 'Steel bracket 40mm', description: 'Zinc-plated L bracket', unit: 'each', reorderAt: 25, totalOnHand: 148, createdAt: '2026-05-02T09:12:00Z' },
-    { id: 'itm-2', sku: 'SKU-002', name: 'Hex bolt M8 x 40', description: 'Grade 8.8 hex head bolt', unit: 'each', reorderAt: 500, totalOnHand: 320, createdAt: '2026-05-02T09:14:00Z' },
-    { id: 'itm-3', sku: 'SKU-003', name: 'Packing tape 48mm', description: 'Clear polypropylene, 66m', unit: 'roll', reorderAt: 40, totalOnHand: 40, createdAt: '2026-05-03T11:40:00Z' },
-    { id: 'itm-5', sku: 'SKU-005', name: 'Pallet wrap', description: '500mm stretch film', unit: 'roll', reorderAt: 30, totalOnHand: 12, createdAt: '2026-05-06T14:22:00Z' },
-  ]);
-
-  // Fixed vocabulary, not API data — kept out of the signal<T[]> data contract.
-  readonly units: readonly string[] = ['each', 'roll', 'box', 'pair', 'kg', 'litre', 'metre', 'pallet'];
+  private readonly api = inject(ItemsApi);
 
   readonly isEdit = this.route.snapshot.data['mode'] === 'edit';
   private readonly editId = this.route.snapshot.paramMap.get('id') ?? '';
-
-  private readonly existing = computed(() => this.items().find((item) => item.id === this.editId) ?? null);
 
   readonly sku = signal('');
   readonly name = signal('');
@@ -39,23 +32,36 @@ export class ItemFormComponent {
   readonly formError = signal<string | null>(null);
   readonly saving = signal(false);
 
+  /** The stored unit may predate the vocabulary, so keep it selectable. */
+  readonly units = computed<readonly string[]>(() => {
+    const current = this.unit();
+    return UNITS.includes(current) ? UNITS : [current, ...UNITS];
+  });
+
   constructor() {
-    const current = this.existing();
-    if (this.isEdit && current) {
-      this.sku.set(current.sku);
-      this.name.set(current.name);
-      this.description.set(current.description ?? '');
-      this.unit.set(current.unit);
-      this.reorderAt.set(current.reorderAt);
-    } else if (this.isEdit) {
-      this.sku.set('SKU-001');
-      this.name.set('Steel bracket 40mm');
-      this.description.set('Zinc-plated L bracket');
-      this.reorderAt.set(25);
+    if (this.isEdit && this.editId) void this.loadExisting(this.editId);
+  }
+
+  private async loadExisting(id: string): Promise<void> {
+    try {
+      const item = await this.api.get(id);
+      this.sku.set(item.sku);
+      this.name.set(item.name);
+      this.description.set(item.description ?? '');
+      this.unit.set(item.unit);
+      this.reorderAt.set(item.reorderAt);
+    } catch (error) {
+      this.formError.set(describeError(error, 'Could not load this item.'));
     }
   }
 
-  submit(): void {
+  /**
+   * POST/PATCH /api/items. The server owns SKU uniqueness: its 409 carries
+   * `field: 'sku'`, which is attached to that control instead of the page-level
+   * banner so the duplicate reads as a field error.
+   */
+  async submit(): Promise<void> {
+    if (this.saving()) return;
     this.skuError.set(null);
     this.formError.set(null);
 
@@ -73,17 +79,26 @@ export class ItemFormComponent {
       return;
     }
 
-    // Mirrors the API's 409 on a duplicate SKU, surfaced as an inline field error.
-    const clash = this.items().some(
-      (item) => item.sku.toLowerCase() === sku.toLowerCase() && item.id !== this.editId,
-    );
-    if (clash) {
-      this.skuError.set(`SKU ${sku} is already used by another item.`);
-      return;
-    }
+    const payload = {
+      sku,
+      name: this.name().trim(),
+      description: this.description().trim() || null,
+      unit: this.unit(),
+      reorderAt: Math.trunc(this.reorderAt()),
+    };
 
     this.saving.set(true);
-    void this.router.navigate(['/items']);
+    try {
+      const saved = this.isEdit
+        ? await this.api.update(this.editId, payload)
+        : await this.api.create(payload);
+      await this.router.navigate(['/items', saved.id]);
+    } catch (error) {
+      if (error instanceof ApiError && error.field === 'sku') this.skuError.set(error.message);
+      else this.formError.set(describeError(error, 'Could not save this item.'));
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   cancel(): void {

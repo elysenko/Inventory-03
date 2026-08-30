@@ -58,6 +58,15 @@
     </nav>
 
     <router-outlet />
+  } @else if (loading()) {
+    <div class="state" data-testid="item-detail-loading">
+      <span class="state-title">Loading item…</span>
+    </div>
+  } @else if (error()) {
+    <div class="state" data-testid="item-detail-error">
+      <span class="state-title state-error">Could not load this item</span>
+      <span>{{ error() }}</span>
+    </div>
   } @else {
     <div class="state" data-testid="item-detail-empty">
       <span class="state-title">Item not found</span>

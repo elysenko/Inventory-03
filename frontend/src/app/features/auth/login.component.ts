@@ -18,6 +18,7 @@ export class LoginComponent {
   readonly email = signal('manager@demo');
   readonly password = signal('Demo1234!');
   readonly error = signal<string | null>(null);
+  readonly submitting = signal(false);
 
   useAccount(email: string): void {
     this.email.set(email);
@@ -25,25 +26,43 @@ export class LoginComponent {
     this.error.set(null);
   }
 
-  /** Resolves locally — no network call, so submitting always completes. */
-  submit(): void {
-    const result = this.auth.login(this.email(), this.password());
-    if (!result.ok) {
-      this.error.set(result.error ?? 'Sign in failed.');
-      return;
+  /** Exchanges the credentials for a real bearer token at POST /api/auth/login. */
+  async submit(): Promise<void> {
+    if (this.submitting()) return;
+    this.submitting.set(true);
+    try {
+      const result = await this.auth.login(this.email(), this.password());
+      if (!result.ok) {
+        this.error.set(result.error ?? 'Sign in failed.');
+        return;
+      }
+      this.error.set(null);
+      await this.go();
+    } finally {
+      this.submitting.set(false);
     }
-    this.error.set(null);
-    this.go();
   }
 
-  /** Secondary shortcut: seeds the signed-in state and jumps straight in. */
-  skipLogin(): void {
-    this.auth.demoLogin('manager');
-    this.go();
+  /** Shortcut that signs in as the seeded manager account. */
+  async skipLogin(): Promise<void> {
+    if (this.submitting()) return;
+    this.submitting.set(true);
+    try {
+      const result = await this.auth.demoLogin('manager');
+      if (!result.ok) {
+        this.error.set(result.error ?? 'Sign in failed.');
+        return;
+      }
+      this.error.set(null);
+      await this.go();
+    } finally {
+      this.submitting.set(false);
+    }
   }
 
-  private go(): void {
+  /** Honours ?returnUrl= so a deep link survives the sign-in detour. */
+  private async go(): Promise<void> {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    void this.router.navigateByUrl(returnUrl && returnUrl !== '/login' ? returnUrl : '/items');
+    await this.router.navigateByUrl(returnUrl && !returnUrl.startsWith('/login') ? returnUrl : '/items');
   }
 }

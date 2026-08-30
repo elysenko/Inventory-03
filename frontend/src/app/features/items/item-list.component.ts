@@ -3,6 +3,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/auth.service';
 import { Item } from '../../core/models';
+import { describeError } from '../../shared/api/api-client.service';
+import { ItemsApi } from '../../shared/api/items-api.service';
 
 const PAGE_SIZE = 5;
 
@@ -16,21 +18,38 @@ const PAGE_SIZE = 5;
 export class ItemListComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly api = inject(ItemsApi);
   readonly auth = inject(AuthService);
 
-  readonly loading = signal(false);
+  readonly loading = signal(true);
   readonly error = signal<string | null>(null);
 
-  readonly items = signal<Item[]>([
-    { id: 'itm-1', sku: 'SKU-001', name: 'Steel bracket 40mm', description: 'Zinc-plated L bracket', unit: 'each', reorderAt: 25, totalOnHand: 148, createdAt: '2026-05-02T09:12:00Z' },
-    { id: 'itm-2', sku: 'SKU-002', name: 'Hex bolt M8 x 40', description: 'Grade 8.8 hex head bolt', unit: 'each', reorderAt: 500, totalOnHand: 320, createdAt: '2026-05-02T09:14:00Z' },
-    { id: 'itm-3', sku: 'SKU-003', name: 'Packing tape 48mm', description: 'Clear polypropylene, 66m', unit: 'roll', reorderAt: 40, totalOnHand: 40, createdAt: '2026-05-03T11:40:00Z' },
-    { id: 'itm-4', sku: 'SKU-004', name: 'Cardboard box, large', description: 'Double wall 600x400x400', unit: 'each', reorderAt: 100, totalOnHand: 612, createdAt: '2026-05-04T08:05:00Z' },
-    { id: 'itm-5', sku: 'SKU-005', name: 'Pallet wrap', description: '500mm stretch film', unit: 'roll', reorderAt: 30, totalOnHand: 12, createdAt: '2026-05-06T14:22:00Z' },
-    { id: 'itm-6', sku: 'SKU-006', name: 'Safety gloves, large', description: 'Cut-resistant level C', unit: 'pair', reorderAt: 60, totalOnHand: 210, createdAt: '2026-05-09T10:31:00Z' },
-    { id: 'itm-7', sku: 'SKU-007', name: 'Thermal labels 4x6', description: 'Direct thermal, 250/roll', unit: 'box', reorderAt: 15, totalOnHand: 0, createdAt: '2026-05-12T16:47:00Z' },
-    { id: 'itm-8', sku: 'SKU-008', name: 'Conveyor belt segment', description: 'PVC 800mm modular link', unit: 'each', reorderAt: 4, totalOnHand: 9, createdAt: '2026-05-15T07:58:00Z' },
-  ]);
+  /**
+   * The whole catalogue in one request.
+   *
+   * The header reads "<filtered> of <total> items", and the low-stock counter
+   * covers every item — both need the unfiltered set, so filtering and paging
+   * stay on the client over a single bounded fetch rather than issuing a second
+   * round trip per keystroke.
+   */
+  readonly items = signal<Item[]>([]);
+
+  constructor() {
+    void this.load();
+  }
+
+  private async load(): Promise<void> {
+    this.loading.set(true);
+    try {
+      this.items.set(await this.api.listAll());
+      this.error.set(null);
+    } catch (error) {
+      this.items.set([]);
+      this.error.set(describeError(error, 'Could not load items.'));
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   private readonly params = toSignal(this.route.queryParamMap, {
     initialValue: this.route.snapshot.queryParamMap,

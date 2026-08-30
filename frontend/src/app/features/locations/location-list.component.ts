@@ -3,6 +3,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/auth.service';
 import { Location } from '../../core/models';
+import { ApiError, describeError } from '../../shared/api/api-client.service';
+import { LocationsApi } from '../../shared/api/locations-api.service';
 
 @Component({
   selector: 'app-location-list',
@@ -14,16 +16,29 @@ import { Location } from '../../core/models';
 export class LocationListComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly api = inject(LocationsApi);
   readonly auth = inject(AuthService);
 
-  readonly loading = signal(false);
+  readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+  readonly locations = signal<Location[]>([]);
 
-  readonly locations = signal<Location[]>([
-    { id: 'loc-a', name: 'Zone A', zone: 'Receiving', itemsStocked: 4 },
-    { id: 'loc-b', name: 'Zone B', zone: 'Main floor', itemsStocked: 5 },
-    { id: 'loc-c', name: 'Zone C', zone: 'Dispatch', itemsStocked: 3 },
-  ]);
+  constructor() {
+    void this.load();
+  }
+
+  private async load(): Promise<void> {
+    this.loading.set(true);
+    try {
+      this.locations.set(await this.api.list());
+      this.error.set(null);
+    } catch (error) {
+      this.locations.set([]);
+      this.error.set(describeError(error, 'Could not load locations.'));
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   private readonly params = toSignal(this.route.queryParamMap, {
     initialValue: this.route.snapshot.queryParamMap,
@@ -40,7 +55,7 @@ export class LocationListComponent {
     );
   });
 
-  /** Set when a delete is blocked, mirroring the API's 409 on a referenced location. */
+  /** Set from the API's 409 when a location is still referenced. */
   readonly deleteBlocked = signal<string | null>(null);
 
   onSearch(value: string): void {
@@ -51,14 +66,20 @@ export class LocationListComponent {
     });
   }
 
-  tryDelete(location: Location): void {
-    if (location.itemsStocked > 0) {
-      this.deleteBlocked.set(
-        `${location.name} still holds stock for ${location.itemsStocked} item(s) and is referenced by the movement log, so it cannot be deleted. Move the stock out first.`,
-      );
-      return;
-    }
+  /**
+   * The server is authoritative about whether a delete is allowed — it refuses
+   * with 409 while any stock or movement references the location — so the
+   * request is always attempted and its message is what the banner shows.
+   */
+  async tryDelete(location: Location): Promise<void> {
     this.deleteBlocked.set(null);
+    try {
+      await this.api.remove(location.id);
+      await this.load();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) this.deleteBlocked.set(error.message);
+      else this.error.set(describeError(error, 'Could not delete this location.'));
+    }
   }
 
   dismissBlocked(): void {

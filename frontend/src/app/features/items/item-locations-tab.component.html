@@ -4,7 +4,16 @@
     <span class="page-subtitle">{{ rows().length }} location(s)</span>
   </div>
 
-  @if (rows().length === 0) {
+  @if (loading()) {
+    <div class="state" data-testid="item-locations-loading">
+      <span class="state-title">Loading stock by location…</span>
+    </div>
+  } @else if (error()) {
+    <div class="state" data-testid="item-locations-error">
+      <span class="state-title state-error">Could not load the breakdown</span>
+      <span>{{ error() }}</span>
+    </div>
+  } @else if (rows().length === 0) {
     <div class="state" data-testid="item-locations-empty">
       <span class="state-title">No stock recorded anywhere</span>
       <span>This item has no stock rows yet, so it counts as below its reorder point.</span>

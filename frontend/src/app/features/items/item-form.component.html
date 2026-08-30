@@ -54,7 +54,7 @@
           <label for="item-unit">Unit</label>
           <select id="item-unit" class="select" name="unit" data-testid="item-form-unit"
             [ngModel]="unit()" (ngModelChange)="unit.set($event)">
-            @for (option of units; track option) {
+            @for (option of units(); track option) {
               <option [value]="option">{{ option }}</option>
             }
           </select>

@@ -19,8 +19,15 @@ export class SignupComponent {
   readonly password = signal('Demo1234!');
   readonly confirm = signal('Demo1234!');
   readonly error = signal<string | null>(null);
+  readonly submitting = signal(false);
 
-  submit(): void {
+  /**
+   * POST /api/auth/signup. The API decides the role — the first account on an
+   * empty database is a manager, every later one a clerk — and answers 409 with
+   * `field: 'email'` when the address is taken.
+   */
+  async submit(): Promise<void> {
+    if (this.submitting()) return;
     if (!this.name().trim()) {
       this.error.set('Enter your name.');
       return;
@@ -29,17 +36,33 @@ export class SignupComponent {
       this.error.set('The two passwords do not match.');
       return;
     }
-    const result = this.auth.signup(this.email(), this.password());
-    if (!result.ok) {
-      this.error.set(result.error ?? 'Sign up failed.');
-      return;
+    this.submitting.set(true);
+    try {
+      const result = await this.auth.signup(this.email(), this.password());
+      if (!result.ok) {
+        this.error.set(result.error ?? 'Sign up failed.');
+        return;
+      }
+      this.error.set(null);
+      await this.router.navigateByUrl('/items');
+    } finally {
+      this.submitting.set(false);
     }
-    this.error.set(null);
-    void this.router.navigateByUrl('/items');
   }
 
-  skipSignup(): void {
-    this.auth.demoLogin('manager');
-    void this.router.navigateByUrl('/items');
+  /** Shortcut that signs in as the seeded manager account. */
+  async skipSignup(): Promise<void> {
+    if (this.submitting()) return;
+    this.submitting.set(true);
+    try {
+      const result = await this.auth.demoLogin('manager');
+      if (!result.ok) {
+        this.error.set(result.error ?? 'Sign in failed.');
+        return;
+      }
+      await this.router.navigateByUrl('/items');
+    } finally {
+      this.submitting.set(false);
+    }
   }
 }

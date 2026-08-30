@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingEntry } from '../../core/models';
+import { describeError } from '../../shared/api/api-client.service';
+import { SettingsApi } from '../../shared/api/settings-api.service';
 
 interface ServiceGroup {
   service: string;
@@ -18,15 +20,35 @@ interface ServiceGroup {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsComponent {
-  readonly saved = signal<string | null>(null);
+  private readonly api = inject(SettingsApi);
 
-  readonly settings = signal<SettingEntry[]>([
-    { key: 'DATABASE_URL', service: 'postgresql', label: 'Connection URL', value: 'postgresql://stockroom:••••••••@db:5432/stockroom', configured: true, secret: true },
-    { key: 'JWT_SECRET', service: 'postgresql', label: 'JWT signing secret', value: '••••••••••••••••', configured: true, secret: true },
-    { key: 'MINIO_ENDPOINT', service: 'minio', label: 'Endpoint', value: '', configured: false, secret: false },
-    { key: 'MINIO_ACCESS_KEY', service: 'minio', label: 'Access key', value: '', configured: false, secret: true },
-    { key: 'MINIO_SECRET_KEY', service: 'minio', label: 'Secret key', value: '', configured: false, secret: true },
-  ]);
+  readonly saved = signal<string | null>(null);
+  readonly error = signal<string | null>(null);
+  readonly loading = signal(true);
+
+  /**
+   * GET /api/admin/settings reports each slot's *effective* state — the env var
+   * first, a DB override second — so this screen shows what the running app
+   * will actually use. Secret values arrive masked and are never echoed back.
+   */
+  readonly settings = signal<SettingEntry[]>([]);
+
+  constructor() {
+    void this.load();
+  }
+
+  private async load(): Promise<void> {
+    this.loading.set(true);
+    try {
+      this.settings.set(await this.api.list());
+      this.error.set(null);
+    } catch (error) {
+      this.settings.set([]);
+      this.error.set(describeError(error, 'Could not load the service credentials.'));
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   // Presentation copy, not API data.
   private readonly serviceMeta: readonly { service: string; label: string; blurb: string }[] = [
@@ -56,7 +78,21 @@ export class SettingsComponent {
     );
   }
 
-  save(group: ServiceGroup): void {
-    this.saved.set(`${group.label} credentials saved.`);
+  /**
+   * PATCH /api/admin/settings with just this group's slots. Re-sending an
+   * untouched secret sends the mask back, which the server treats as "leave it
+   * alone" rather than overwriting the credential with bullet characters.
+   */
+  async save(group: ServiceGroup): Promise<void> {
+    this.error.set(null);
+    try {
+      this.settings.set(
+        await this.api.update(group.entries.map((entry) => ({ key: entry.key, value: entry.value }))),
+      );
+      this.saved.set(`${group.label} credentials saved.`);
+    } catch (error) {
+      this.saved.set(null);
+      this.error.set(describeError(error, 'Could not save these credentials.'));
+    }
   }
 }

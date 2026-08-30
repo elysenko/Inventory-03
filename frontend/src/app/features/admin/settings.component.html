@@ -22,6 +22,16 @@
     <div class="alert alert-info" role="status" data-testid="settings-saved">{{ saved() }}</div>
   }
 
+  @if (error()) {
+    <div class="alert alert-error" role="alert" data-testid="settings-error">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="card">
+      <div class="state" data-testid="settings-loading"><span class="state-title">Loading credentials…</span></div>
+    </div>
+  }
+
   @for (group of groups(); track group.service) {
     <div class="card service" [attr.data-testid]="'settings-service-' + group.service">
       <div class="card-header">

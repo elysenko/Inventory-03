@@ -59,8 +59,9 @@ export class AppComponent {
     this.drawerOpen.set(false);
   }
 
+  /** Signs in as the other seeded account so the API really enforces that role. */
   onSwitchRole(): void {
-    this.auth.switchRole(this.auth.isManager() ? 'clerk' : 'manager');
+    void this.auth.switchRole(this.auth.isManager() ? 'clerk' : 'manager');
     this.closeDrawer();
   }
 

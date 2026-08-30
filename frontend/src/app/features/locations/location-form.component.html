@@ -40,7 +40,7 @@
         <label for="location-zone">Zone</label>
         <select id="location-zone" class="select" name="zone" data-testid="location-form-zone"
           [ngModel]="zone()" (ngModelChange)="zone.set($event)">
-          @for (option of zones; track option) {
+          @for (option of zones(); track option) {
             <option [value]="option">{{ option }}</option>
           }
         </select>

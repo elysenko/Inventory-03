@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LowStockRow } from '../../core/models';
+import { describeError } from '../../shared/api/api-client.service';
+import { ReportsApi } from '../../shared/api/reports-api.service';
 
 @Component({
   selector: 'app-low-stock',
@@ -10,20 +12,34 @@ import { LowStockRow } from '../../core/models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LowStockComponent {
-  readonly loading = signal(false);
+  private readonly api = inject(ReportsApi);
+
+  readonly loading = signal(true);
   readonly error = signal<string | null>(null);
 
   /**
-   * Predicate is `totalOnHand <= reorderAt`, so the boundary case
-   * (SKU-003, 40 on hand against a reorder point of 40) IS listed, and items
-   * with no stock rows at all (SKU-007) are listed too.
+   * GET /api/reports/low-stock. The predicate is `totalOnHand <= reorderAt`
+   * evaluated across every location, so the exact boundary is listed and items
+   * with no stock rows at all are listed too.
    */
-  readonly rows = signal<LowStockRow[]>([
-    { itemId: 'itm-2', sku: 'SKU-002', name: 'Hex bolt M8 x 40', unit: 'each', totalOnHand: 320, reorderAt: 500, shortfall: 180 },
-    { itemId: 'itm-5', sku: 'SKU-005', name: 'Pallet wrap', unit: 'roll', totalOnHand: 12, reorderAt: 30, shortfall: 18 },
-    { itemId: 'itm-7', sku: 'SKU-007', name: 'Thermal labels 4x6', unit: 'box', totalOnHand: 0, reorderAt: 15, shortfall: 15 },
-    { itemId: 'itm-3', sku: 'SKU-003', name: 'Packing tape 48mm', unit: 'roll', totalOnHand: 40, reorderAt: 40, shortfall: 0 },
-  ]);
+  readonly rows = signal<LowStockRow[]>([]);
+
+  constructor() {
+    void this.load();
+  }
+
+  private async load(): Promise<void> {
+    this.loading.set(true);
+    try {
+      this.rows.set(await this.api.lowStock());
+      this.error.set(null);
+    } catch (error) {
+      this.rows.set([]);
+      this.error.set(describeError(error, 'Could not build the low-stock report.'));
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   readonly totalShortfall = computed(() => this.rows().reduce((sum, row) => sum + row.shortfall, 0));
   readonly outOfStockCount = computed(() => this.rows().filter((row) => row.totalOnHand === 0).length);

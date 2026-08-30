@@ -4,7 +4,16 @@
     <span class="page-subtitle">{{ rows().length }} movement(s)</span>
   </div>
 
-  @if (rows().length === 0) {
+  @if (loading()) {
+    <div class="state" data-testid="item-movements-loading">
+      <span class="state-title">Loading movement history…</span>
+    </div>
+  } @else if (error()) {
+    <div class="state" data-testid="item-movements-error">
+      <span class="state-title state-error">Could not load the movement history</span>
+      <span>{{ error() }}</span>
+    </div>
+  } @else if (rows().length === 0) {
     <div class="state" data-testid="item-movements-empty">
       <span class="state-title">No movements recorded for this item</span>
       <span>Movements are an audit trail — they can never be edited or deleted.</span>

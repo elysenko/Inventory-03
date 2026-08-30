@@ -1,105 +1,108 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Role, User } from './models';
-import { readJson, remove, writeJson } from './storage';
+import { ApiError } from '../shared/api/api-client.service';
+import { AuthApi, AuthResponse } from '../shared/api/auth-api.service';
+import { Role } from './models';
+import { clearSession, readToken, sessionUser, writeSession, writeUser } from './session';
 
-const USER_KEY = 'user';
-const TOKEN_KEY = 'token';
+/** The seeded demo accounts (api/prisma/seed.ts). */
+const DEMO_PASSWORD = 'Demo1234!';
+const DEMO_EMAIL: Record<Role, string> = { manager: 'manager@demo', clerk: 'clerk@demo' };
 
-const DEMO_MANAGER: User = { id: 'u-mgr', email: 'manager@demo', role: 'manager' };
-const DEMO_CLERK: User = { id: 'u-clk', email: 'clerk@demo', role: 'clerk' };
+export interface AuthResult {
+  ok: boolean;
+  error?: string;
+}
 
-/** Narrow an untrusted parsed value to a User, or null. */
-function parseUser(value: unknown): User | null {
-  if (typeof value !== 'object' || value === null) return null;
-  const candidate = value as Partial<User>;
-  const roleOk = candidate.role === 'clerk' || candidate.role === 'manager';
-  if (typeof candidate.id !== 'string' || !candidate.id) return null;
-  if (typeof candidate.email !== 'string' || !candidate.email) return null;
-  if (!roleOk) return null;
-  return { id: candidate.id, email: candidate.email, role: candidate.role as Role };
+function describe(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  return error instanceof Error ? error.message : 'Something went wrong.';
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly router = inject(Router);
+  private readonly api = inject(AuthApi);
 
-  readonly user = signal<User | null>(this.restore());
+  /**
+   * Restored synchronously from storage so the route guards can decide on the
+   * very first navigation — an async check would bounce a deep-linked, signed-in
+   * user to /login before the token had a chance to be validated.
+   */
+  readonly user = sessionUser.asReadonly();
   readonly isAuthenticated = computed(() => this.user() !== null);
   readonly isManager = computed(() => this.user()?.role === 'manager');
 
+  constructor() {
+    void this.revalidate();
+  }
+
   /**
-   * Restores the signed-in user from namespaced storage.
-   *
-   * Everything read here is untrusted: a malformed or stale value must not
-   * throw (a throw during construction blanks the whole page), so any
-   * unrecognised shape clears the keys and falls back to the demo manager —
-   * the preview is served without a backend and is treated as signed in.
+   * Confirms the stored token against GET /api/auth/me and picks up a role
+   * change made server-side. Only a 401 signs the user out: a network failure
+   * or a 5xx must not evict a session the server would still honour.
    */
-  private restore(): User {
+  private async revalidate(): Promise<void> {
+    if (!readToken()) return;
     try {
-      const stored = parseUser(readJson<unknown>(USER_KEY));
-      if (stored) return stored;
-    } catch {
-      /* fall through to the reset below */
+      writeUser(await this.api.me());
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) clearSession();
     }
-    remove(USER_KEY);
-    remove(TOKEN_KEY);
-    return this.persist(DEMO_MANAGER);
   }
 
-  private persist(user: User): User {
-    writeJson(USER_KEY, user);
-    writeJson(TOKEN_KEY, `mock.${user.role}.token`);
-    return user;
+  async login(email: string, password: string): Promise<AuthResult> {
+    const invalid = this.validate(email, password);
+    if (invalid) return { ok: false, error: invalid };
+    try {
+      this.adopt(await this.api.login(email.trim(), password));
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: describe(error) };
+    }
+  }
+
+  async signup(email: string, password: string): Promise<AuthResult> {
+    const invalid = this.validate(email, password);
+    if (invalid) return { ok: false, error: invalid };
+    try {
+      this.adopt(await this.api.signup(email.trim(), password));
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: describe(error) };
+    }
+  }
+
+  /** Signs in as a seeded demo account rather than faking a client-side session. */
+  demoLogin(role: Role = 'manager'): Promise<AuthResult> {
+    return this.login(DEMO_EMAIL[role], DEMO_PASSWORD);
   }
 
   /**
-   * Resolves entirely in the client — there is no API on the preview host, so
-   * awaiting a network call here would strand the reviewer on this screen.
-   * Any well-formed credentials succeed; the seeded emails pick the role.
+   * Swaps role by signing in as the other seeded account, so the token really
+   * carries that role and the API enforces it. The user is sent to /items
+   * because the route they are on may now be manager-only.
    */
-  login(email: string, password: string): { ok: boolean; error?: string } {
-    const cleanEmail = email.trim();
-    if (!cleanEmail || !password) {
-      return { ok: false, error: 'Enter both an email address and a password.' };
-    }
-    if (!/^[^\s@]+@[^\s@]+$/.test(cleanEmail)) {
-      return { ok: false, error: 'Enter a valid email address.' };
-    }
-    const role: Role = cleanEmail.toLowerCase().startsWith('clerk') ? 'clerk' : 'manager';
-    this.user.set(this.persist({ id: `u-${role}`, email: cleanEmail, role }));
-    return { ok: true };
+  async switchRole(role: Role): Promise<AuthResult> {
+    const result = await this.demoLogin(role);
+    if (result.ok) await this.router.navigateByUrl('/items');
+    return result;
   }
 
-  signup(email: string, password: string): { ok: boolean; error?: string } {
-    const cleanEmail = email.trim();
-    if (!cleanEmail || !password) {
-      return { ok: false, error: 'Enter both an email address and a password.' };
-    }
-    if (!/^[^\s@]+@[^\s@]+$/.test(cleanEmail)) {
-      return { ok: false, error: 'Enter a valid email address.' };
-    }
-    this.user.set(this.persist({ id: 'u-new', email: cleanEmail, role: 'clerk' }));
-    return { ok: true };
-  }
-
-  /** Seeds the signed-in state without form input (demo-mode shortcut). */
-  demoLogin(role: Role = 'manager'): void {
-    this.user.set(this.persist(role === 'manager' ? DEMO_MANAGER : DEMO_CLERK));
-  }
-
-  /** Swaps role in place so a reviewer can compare the clerk and manager nav. */
-  switchRole(role: Role): void {
-    const current = this.user();
-    if (!current) return this.demoLogin(role);
-    this.user.set(this.persist({ ...current, role, email: role === 'manager' ? 'manager@demo' : 'clerk@demo' }));
-  }
-
+  /** Logout is a client-side token discard — the JWT is stateless. */
   logout(): void {
-    remove(USER_KEY);
-    remove(TOKEN_KEY);
-    this.user.set(null);
+    clearSession();
     void this.router.navigate(['/login']);
+  }
+
+  private adopt(response: AuthResponse): void {
+    writeSession(response.accessToken, response.user);
+  }
+
+  private validate(email: string, password: string): string | null {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) return 'Enter both an email address and a password.';
+    if (!/^[^\s@]+@[^\s@]+$/.test(cleanEmail)) return 'Enter a valid email address.';
+    return null;
   }
 }
