@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { UsersRouter } from './users.router';
 
+/**
+ * No controller: users are managed through /api/auth (signup) and the seed.
+ * The service is exported for AuthService and the JWT strategy.
+ */
 @Module({
-  providers: [UsersService, UsersRouter],
-  exports: [UsersService, UsersRouter],
+  providers: [UsersService],
+  exports: [UsersService],
 })
 export class UsersModule {}
