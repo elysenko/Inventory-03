@@ -1,3 +1,6 @@
+// StockRoom — inventory management domain model.
+// Source of truth for the API contract consumed by frontend/src/app/core/models.ts.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,16 +10,108 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+/// `manager` is the admin-equivalent role; `clerk` is the standard user role.
+/// Lowercase values are the approved frontend contract (core/models.ts: Role).
+enum Role {
+  clerk
+  manager
 }
 
-enum Role {
-  USER
-  ADMIN
+enum MovementType {
+  IN
+  OUT
+  TRANSFER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(clerk)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  movements Movement[]
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  sku         String   @unique
+  name        String
+  description String?
+  unit        String
+  reorderAt   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stockLevels StockLevel[]
+  movements   Movement[]
+
+  @@index([name])
+}
+
+model Location {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  zone      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stockLevels   StockLevel[]
+  movementsFrom Movement[]   @relation("MovementFromLoc")
+  movementsTo   Movement[]   @relation("MovementToLoc")
+
+  @@index([zone])
+}
+
+/// Per-location balance for an item. The sum of an item's qty across all
+/// StockLevel rows is its `totalOnHand`.
+model StockLevel {
+  id         String   @id @default(cuid())
+  itemId     String
+  locationId String
+  qty        Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  item     Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, locationId])
+  @@index([itemId])
+  @@index([locationId])
+}
+
+/// Append-only audit row. Restrict on every FK so a referenced item, location,
+/// or user can never be deleted out from under the audit log.
+model Movement {
+  id        String       @id @default(cuid())
+  type      MovementType
+  itemId    String
+  fromLocId String?
+  toLocId   String?
+  qty       Int
+  note      String?
+  userId    String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  item    Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  fromLoc Location? @relation("MovementFromLoc", fields: [fromLocId], references: [id], onDelete: Restrict)
+  toLoc   Location? @relation("MovementToLoc", fields: [toLocId], references: [id], onDelete: Restrict)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([itemId, createdAt])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([fromLocId])
+  @@index([toLocId])
+}
+
+/// Runtime override layer for service credentials. resolveConfig() reads env
+/// vars first and falls back to this table.
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
