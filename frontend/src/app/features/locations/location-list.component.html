@@ -1,0 +1,81 @@
+<section class="page" data-testid="locations-page">
+  <header class="page-head">
+    <div>
+      <h1>Locations</h1>
+      <p class="page-subtitle">{{ filtered().length }} storage location(s) across the warehouse</p>
+    </div>
+    @if (auth.isManager()) {
+      <a class="btn btn-primary" routerLink="/locations/new" data-testid="location-new-button">New location</a>
+    }
+  </header>
+
+  @if (deleteBlocked()) {
+    <div class="alert alert-warn" role="alert" data-testid="location-delete-blocked">
+      <span>{{ deleteBlocked() }}</span>
+      <button type="button" class="btn btn-ghost dismiss" (click)="dismissBlocked()">Dismiss</button>
+    </div>
+  }
+
+  <div class="toolbar">
+    <div class="field grow">
+      <label for="locations-search">Search</label>
+      <input
+        id="locations-search"
+        class="input"
+        type="search"
+        placeholder="Name or zone…"
+        data-testid="locations-search"
+        [value]="query()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  <div class="card">
+    @if (loading()) {
+      <div class="state" data-testid="locations-loading"><span class="state-title">Loading locations…</span></div>
+    } @else if (error()) {
+      <div class="state" data-testid="locations-error">
+        <span class="state-title state-error">Could not load locations</span>
+        <span>{{ error() }}</span>
+      </div>
+    } @else if (filtered().length === 0) {
+      <div class="state" data-testid="locations-empty">
+        <span class="state-title">No locations match “{{ query() }}”</span>
+        <button type="button" class="btn btn-secondary" (click)="onSearch('')">Clear search</button>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="table" data-testid="locations-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Zone</th>
+              <th class="num">Items stocked</th>
+              @if (auth.isManager()) { <th class="actions-col">Actions</th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (location of filtered(); track location.id) {
+              <tr [attr.data-testid]="'location-row-' + location.id">
+                <td class="name">{{ location.name }}</td>
+                <td><span class="badge badge-neutral">{{ location.zone }}</span></td>
+                <td class="num">{{ location.itemsStocked }}</td>
+                @if (auth.isManager()) {
+                  <td class="actions-col">
+                    <div class="row-actions">
+                      <a class="btn btn-secondary btn-sm" [routerLink]="['/locations', location.id, 'edit']"
+                        [attr.data-testid]="'location-edit-' + location.id">Edit</a>
+                      <button type="button" class="btn btn-danger btn-sm"
+                        [attr.data-testid]="'location-delete-' + location.id" (click)="tryDelete(location)">Delete</button>
+                    </div>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</section>

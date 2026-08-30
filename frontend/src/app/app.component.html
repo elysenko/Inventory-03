@@ -1,0 +1,112 @@
+<!-- data-testid="app-ready" is the readiness landmark: it enters the DOM only
+     after Angular bootstraps this root component. Keep it here. -->
+<div class="app" data-testid="app-ready" [class.app--bare]="isAuthScreen()">
+  @if (isAuthScreen()) {
+    <router-outlet />
+  } @else {
+    <header class="topbar">
+      <button
+        type="button"
+        class="drawer-toggle"
+        data-testid="nav-drawer-toggle"
+        [attr.aria-expanded]="drawerOpen()"
+        aria-label="Toggle navigation"
+        (click)="toggleDrawer()"
+      >
+        <span class="bars" aria-hidden="true"></span>
+      </button>
+
+      <a class="wordmark" routerLink="/items" data-testid="app-wordmark">
+        <span class="wordmark-glyph" aria-hidden="true">SR</span>
+        <span class="wordmark-text">StockRoom</span>
+      </a>
+
+      <div class="topbar-spacer"></div>
+
+      @if (auth.user(); as currentUser) {
+        <button
+          type="button"
+          class="role-chip"
+          data-testid="role-switch"
+          [title]="'Signed in as ' + currentUser.email + ' — tap to switch role'"
+          (click)="onSwitchRole()"
+        >
+          <span class="role-chip-email">{{ currentUser.email }}</span>
+          <span class="badge" [class.badge-ok]="currentUser.role === 'manager'" [class.badge-neutral]="currentUser.role === 'clerk'">
+            {{ currentUser.role }}
+          </span>
+        </button>
+      }
+
+      <button type="button" class="btn btn-ghost logout" data-testid="logout-button" (click)="onLogout()">
+        Sign out
+      </button>
+    </header>
+
+    <div class="body">
+      <nav class="sidebar" aria-label="Primary">
+        <ul>
+          @for (entry of visibleNav(); track entry.path) {
+            <li>
+              <a
+                class="nav-link"
+                [routerLink]="entry.path"
+                [routerLinkActiveOptions]="{ exact: entry.path === '/movements' }"
+                routerLinkActive="is-active"
+                [attr.data-testid]="entry.testId"
+              >
+                <span class="nav-icon" aria-hidden="true">{{ entry.icon }}</span>
+                <span>{{ entry.label }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+        <p class="sidebar-foot">Demo data · no backend connected</p>
+      </nav>
+
+      <!-- Mobile drawer (6 nav entries for managers exceeds a tab bar) -->
+      @if (drawerOpen()) {
+        <div class="scrim" data-testid="nav-scrim" (click)="closeDrawer()"></div>
+      }
+      <nav class="drawer" [class.is-open]="drawerOpen()" aria-label="Primary mobile">
+        <div class="drawer-head">
+          <p class="drawer-title">Navigate</p>
+          <button type="button" class="drawer-close" data-testid="nav-drawer-close" aria-label="Close navigation"
+            (click)="closeDrawer()">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <ul>
+          @for (entry of visibleNav(); track entry.path) {
+            <li>
+              <a
+                class="nav-link"
+                [routerLink]="entry.path"
+                [routerLinkActiveOptions]="{ exact: entry.path === '/movements' }"
+                routerLinkActive="is-active"
+                [attr.data-testid]="entry.testId + '-mobile'"
+                (click)="closeDrawer()"
+              >
+                <span class="nav-icon" aria-hidden="true">{{ entry.icon }}</span>
+                <span>{{ entry.label }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+        <button type="button" class="btn btn-secondary btn-block" (click)="onSwitchRole()">
+          Switch to {{ auth.isManager() ? 'clerk' : 'manager' }} view
+        </button>
+      </nav>
+
+      <main class="content" data-testid="app-content">
+        <router-outlet />
+      </main>
+    </div>
+
+    <!-- Primary action kept in the bottom half of the screen for one-handed use -->
+    <a class="fab" routerLink="/movements/new" data-testid="fab-record-movement" aria-label="Record movement">
+      <span aria-hidden="true">＋</span>
+      <span class="fab-label">Record</span>
+    </a>
+  }
+</div>

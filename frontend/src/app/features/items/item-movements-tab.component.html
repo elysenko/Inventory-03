@@ -1,0 +1,43 @@
+<div class="card" data-testid="item-movements-tab">
+  <div class="card-header">
+    <h2>Movement history</h2>
+    <span class="page-subtitle">{{ rows().length }} movement(s)</span>
+  </div>
+
+  @if (rows().length === 0) {
+    <div class="state" data-testid="item-movements-empty">
+      <span class="state-title">No movements recorded for this item</span>
+      <span>Movements are an audit trail — they can never be edited or deleted.</span>
+      <a class="btn btn-primary" routerLink="/movements/new">Record a movement</a>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table" data-testid="item-movements-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Type</th>
+            <th class="num">Qty</th>
+            <th>From &rarr; To</th>
+            <th>By</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (movement of rows(); track movement.id) {
+            <tr [attr.data-testid]="'item-movement-row-' + movement.id">
+              <td class="nowrap">{{ movement.createdAt | date: 'd MMM y, HH:mm' }}</td>
+              <td><span [class]="badgeClass(movement.type)">{{ movement.type }}</span></td>
+              <td class="num">{{ movement.qty }}</td>
+              <td class="nowrap">
+                {{ movement.fromLocName ?? '—' }} <span class="arrow" aria-hidden="true">&rarr;</span> {{ movement.toLocName ?? '—' }}
+              </td>
+              <td class="mono">{{ movement.userEmail }}</td>
+              <td class="note">{{ movement.note ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

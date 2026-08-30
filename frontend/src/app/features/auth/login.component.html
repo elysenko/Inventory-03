@@ -1,0 +1,73 @@
+<div class="auth" data-testid="login-screen">
+  <div class="brand">
+    <span class="brand-glyph" aria-hidden="true">SR</span>
+    <div>
+      <h1 class="brand-name" data-testid="login-wordmark">StockRoom</h1>
+      <p class="brand-tag">Inventory, movements &amp; low-stock reporting</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Sign in</h2>
+    <p class="panel-sub">Use a demo account below, or any well-formed email address.</p>
+
+    <div class="demo-hint">
+      <p>Demo credentials — password <strong>Demo1234!</strong></p>
+      <div class="demo-accounts">
+        <button type="button" class="demo-account" data-testid="demo-manager" (click)="useAccount('manager@demo')">
+          manager&#64;demo
+        </button>
+        <button type="button" class="demo-account" data-testid="demo-clerk" (click)="useAccount('clerk@demo')">
+          clerk&#64;demo
+        </button>
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert-error" role="alert" data-testid="login-error">{{ error() }}</div>
+    }
+
+    <form (ngSubmit)="submit()">
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input
+          id="login-email"
+          class="input"
+          type="email"
+          autocomplete="username"
+          data-testid="login-email"
+          [ngModel]="email()"
+          (ngModelChange)="email.set($event)"
+          name="email"
+          placeholder="you@company.com"
+        />
+      </div>
+
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input
+          id="login-password"
+          class="input"
+          type="password"
+          autocomplete="current-password"
+          data-testid="login-password"
+          [ngModel]="password()"
+          (ngModelChange)="password.set($event)"
+          name="password"
+          placeholder="••••••••"
+        />
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary btn-block" data-testid="login-submit">Sign in</button>
+        <button type="button" class="skip" data-testid="login-skip" (click)="skipLogin()">
+          Skip login — Demo Mode
+        </button>
+      </div>
+    </form>
+
+    <p class="swap">
+      No account yet? <a class="link" routerLink="/signup" data-testid="link-signup">Create one</a>
+    </p>
+  </div>
+</div>

@@ -1,0 +1,123 @@
+<section class="page" data-testid="items-page">
+  <header class="page-head">
+    <div>
+      <h1>Items</h1>
+      <p class="page-subtitle">
+        {{ filtered().length }} of {{ items().length }} items · {{ lowStockCount() }} at or below reorder point
+      </p>
+    </div>
+    @if (auth.isManager()) {
+      <a class="btn btn-primary" routerLink="/items/new" data-testid="item-new-button">New item</a>
+    }
+  </header>
+
+  <div class="toolbar">
+    <div class="field grow">
+      <label for="items-search">Search</label>
+      <input
+        id="items-search"
+        class="input"
+        type="search"
+        placeholder="SKU or name…"
+        data-testid="items-search"
+        [value]="query()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+    <button
+      type="button"
+      class="btn"
+      [class.btn-primary]="lowStockOnly()"
+      [class.btn-secondary]="!lowStockOnly()"
+      data-testid="items-low-stock-toggle"
+      [attr.aria-pressed]="lowStockOnly()"
+      (click)="toggleLowStock()"
+    >
+      Low stock only
+    </button>
+    @if (query() || lowStockOnly()) {
+      <button type="button" class="btn btn-ghost" data-testid="items-clear-filters" (click)="clearFilters()">
+        Clear
+      </button>
+    }
+  </div>
+
+  <div class="card">
+    @if (loading()) {
+      <div class="state" data-testid="items-loading"><span class="state-title">Loading items…</span></div>
+    } @else if (error()) {
+      <div class="state" data-testid="items-error">
+        <span class="state-title state-error">Could not load items</span>
+        <span>{{ error() }}</span>
+      </div>
+    } @else if (visible().length === 0) {
+      <div class="state" data-testid="items-empty">
+        <span class="state-title">No items match these filters</span>
+        <span>Try a different search term or clear the low-stock filter.</span>
+        <button type="button" class="btn btn-secondary" (click)="clearFilters()">Clear filters</button>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="table" data-testid="items-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Name</th>
+              <th>Unit</th>
+              <th class="num">Reorder at</th>
+              <th class="num">On hand</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of visible(); track item.id) {
+              <tr [attr.data-testid]="'item-row-' + item.sku">
+                <td><a class="link mono" [routerLink]="['/items', item.id]">{{ item.sku }}</a></td>
+                <td>
+                  <a class="item-name" [routerLink]="['/items', item.id]">{{ item.name }}</a>
+                  <span class="item-desc">{{ item.description }}</span>
+                </td>
+                <td>{{ item.unit }}</td>
+                <td class="num">{{ item.reorderAt }}</td>
+                <td class="num strong">{{ item.totalOnHand }}</td>
+                <td>
+                  @if (item.totalOnHand === 0) {
+                    <span class="badge badge-out" data-testid="badge-out-of-stock">Out of stock</span>
+                  } @else if (isLow(item)) {
+                    <span class="badge badge-low" data-testid="badge-low-stock">Low stock</span>
+                  } @else {
+                    <span class="badge badge-ok">In stock</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  @if (totalPages() > 1) {
+    <nav class="pager" data-testid="items-pagination" aria-label="Pagination">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        data-testid="items-prev-page"
+        [disabled]="currentPage() === 1"
+        (click)="goToPage(currentPage() - 1)"
+      >
+        Previous
+      </button>
+      <span class="pager-label">Page {{ currentPage() }} of {{ totalPages() }}</span>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        data-testid="items-next-page"
+        [disabled]="currentPage() === totalPages()"
+        (click)="goToPage(currentPage() + 1)"
+      >
+        Next
+      </button>
+    </nav>
+  }
+</section>

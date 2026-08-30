@@ -1,0 +1,90 @@
+<div class="auth" data-testid="signup-screen">
+  <div class="brand">
+    <span class="brand-glyph" aria-hidden="true">SR</span>
+    <div>
+      <h1 class="brand-name" data-testid="signup-wordmark">StockRoom</h1>
+      <p class="brand-tag">Inventory, movements &amp; low-stock reporting</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Create an account</h2>
+    <p class="panel-sub">
+      The first account on a fresh database becomes a <strong>manager</strong>. Every later signup joins as a
+      <strong>clerk</strong>.
+    </p>
+
+    @if (error()) {
+      <div class="alert alert-error" role="alert" data-testid="signup-error">{{ error() }}</div>
+    }
+
+    <form (ngSubmit)="submit()">
+      <div class="field">
+        <label for="signup-name">Full name</label>
+        <input
+          id="signup-name"
+          class="input"
+          type="text"
+          autocomplete="name"
+          name="name"
+          data-testid="signup-name"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+        />
+      </div>
+
+      <div class="field">
+        <label for="signup-email">Email</label>
+        <input
+          id="signup-email"
+          class="input"
+          type="email"
+          autocomplete="username"
+          name="email"
+          data-testid="signup-email"
+          [ngModel]="email()"
+          (ngModelChange)="email.set($event)"
+        />
+      </div>
+
+      <div class="field">
+        <label for="signup-password">Password</label>
+        <input
+          id="signup-password"
+          class="input"
+          type="password"
+          autocomplete="new-password"
+          name="password"
+          data-testid="signup-password"
+          [ngModel]="password()"
+          (ngModelChange)="password.set($event)"
+        />
+      </div>
+
+      <div class="field">
+        <label for="signup-confirm">Confirm password</label>
+        <input
+          id="signup-confirm"
+          class="input"
+          type="password"
+          autocomplete="new-password"
+          name="confirm"
+          data-testid="signup-confirm"
+          [ngModel]="confirm()"
+          (ngModelChange)="confirm.set($event)"
+        />
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary btn-block" data-testid="signup-submit">Create account</button>
+        <button type="button" class="skip" data-testid="signup-skip" (click)="skipSignup()">
+          Skip signup — Demo Mode
+        </button>
+      </div>
+    </form>
+
+    <p class="swap">
+      Already registered? <a class="link" routerLink="/login" data-testid="link-login">Sign in</a>
+    </p>
+  </div>
+</div>

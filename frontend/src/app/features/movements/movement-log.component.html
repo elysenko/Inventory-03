@@ -1,0 +1,111 @@
+<section class="page" data-testid="movement-log-page">
+  <header class="page-head">
+    <div>
+      <h1>Movement log</h1>
+      <p class="page-subtitle">
+        Managers only · {{ filtered().length }} of {{ movements().length }} movements. This is an audit trail —
+        entries can never be edited or deleted.
+      </p>
+    </div>
+    <a class="btn btn-primary" routerLink="/movements/new" data-testid="movement-log-record">Record movement</a>
+  </header>
+
+  <div class="toolbar">
+    <div class="field">
+      <label for="log-item">Item</label>
+      <select id="log-item" class="select" data-testid="log-filter-item" (change)="setFilter('itemId', $any($event.target).value)">
+        <option value="" [selected]="itemFilter() === ''">All items</option>
+        @for (item of items(); track item.id) {
+          <option [value]="item.id" [selected]="item.id === itemFilter()">{{ item.sku }} — {{ item.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="log-type">Type</label>
+      <select id="log-type" class="select" data-testid="log-filter-type" (change)="setFilter('type', $any($event.target).value)">
+        <option value="" [selected]="typeFilter() === ''">All types</option>
+        @for (option of ['IN', 'OUT', 'TRANSFER']; track option) {
+          <option [value]="option" [selected]="option === typeFilter()">{{ option }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="log-from">From date</label>
+      <input id="log-from" class="input" type="date" data-testid="log-filter-from"
+        [value]="fromDate()" (change)="setFilter('from', $any($event.target).value)" />
+    </div>
+
+    <div class="field">
+      <label for="log-to">To date</label>
+      <input id="log-to" class="input" type="date" data-testid="log-filter-to"
+        [value]="toDate()" (change)="setFilter('to', $any($event.target).value)" />
+    </div>
+
+    @if (hasFilters()) {
+      <button type="button" class="btn btn-ghost" data-testid="log-clear-filters" (click)="clearFilters()">Clear</button>
+    }
+  </div>
+
+  <div class="card">
+    @if (loading()) {
+      <div class="state" data-testid="log-loading"><span class="state-title">Loading movements…</span></div>
+    } @else if (error()) {
+      <div class="state" data-testid="log-error">
+        <span class="state-title state-error">Could not load the movement log</span>
+        <span>{{ error() }}</span>
+      </div>
+    } @else if (visible().length === 0) {
+      <div class="state" data-testid="log-empty">
+        <span class="state-title">No movements match these filters</span>
+        <span>Widen the date range or clear the item and type filters.</span>
+        <button type="button" class="btn btn-secondary" (click)="clearFilters()">Clear filters</button>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="table" data-testid="movement-log-table">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>User</th>
+              <th>Item</th>
+              <th>Type</th>
+              <th class="num">Qty</th>
+              <th>From &rarr; To</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (movement of visible(); track movement.id) {
+              <tr [attr.data-testid]="'movement-row-' + movement.id">
+                <td class="nowrap">{{ movement.createdAt | date: 'd MMM y, HH:mm' }}</td>
+                <td class="mono">{{ movement.userEmail }}</td>
+                <td>
+                  <a class="link" [routerLink]="['/items', movement.itemId]">{{ movement.itemSku }}</a>
+                  <span class="item-name">{{ movement.itemName }}</span>
+                </td>
+                <td><span [class]="badgeClass(movement.type)">{{ movement.type }}</span></td>
+                <td class="num">{{ movement.qty }}</td>
+                <td class="nowrap">
+                  {{ movement.fromLocName ?? '—' }} <span class="arrow" aria-hidden="true">&rarr;</span> {{ movement.toLocName ?? '—' }}
+                </td>
+                <td class="note">{{ movement.note ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  @if (totalPages() > 1) {
+    <nav class="pager" data-testid="log-pagination" aria-label="Pagination">
+      <button type="button" class="btn btn-secondary" data-testid="log-prev-page"
+        [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">Previous</button>
+      <span class="pager-label">Page {{ currentPage() }} of {{ totalPages() }}</span>
+      <button type="button" class="btn btn-secondary" data-testid="log-next-page"
+        [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">Next</button>
+    </nav>
+  }
+</section>

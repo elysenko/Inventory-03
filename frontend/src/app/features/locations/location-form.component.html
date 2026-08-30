@@ -1,0 +1,71 @@
+<section class="page narrow" data-testid="location-form-page">
+  <a class="back" routerLink="/locations">&larr; All locations</a>
+
+  <header class="page-head">
+    <div>
+      <h1>{{ isEdit ? 'Edit location' : 'New location' }}</h1>
+      <p class="page-subtitle">Managers only. Location names must be unique.</p>
+    </div>
+  </header>
+
+  @if (deleteBlocked()) {
+    <div class="alert alert-warn" role="alert" data-testid="location-form-delete-blocked">
+      {{ deleteBlocked() }}
+    </div>
+  }
+
+  <form class="card" (ngSubmit)="submit()">
+    <div class="card-body">
+      <div class="field">
+        <label for="location-name">Name</label>
+        <input
+          id="location-name"
+          class="input"
+          [class.is-invalid]="!!nameError()"
+          type="text"
+          name="name"
+          data-testid="location-form-name"
+          placeholder="Zone D"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event); nameError.set(null)"
+        />
+        @if (nameError()) {
+          <span class="field-error" data-testid="location-form-name-error">{{ nameError() }}</span>
+        } @else {
+          <span class="field-hint">Try <strong>Zone A</strong> to see the duplicate-name error.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="location-zone">Zone</label>
+        <select id="location-zone" class="select" name="zone" data-testid="location-form-zone"
+          [ngModel]="zone()" (ngModelChange)="zone.set($event)">
+          @for (option of zones; track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+      </div>
+
+      @if (isEdit) {
+        <div class="danger-zone">
+          <div>
+            <strong>Delete this location</strong>
+            <p class="field-hint">
+              Blocked while any stock or movement references it — currently {{ itemsStocked() }} item(s) stocked.
+            </p>
+          </div>
+          <button type="button" class="btn btn-danger" data-testid="location-form-delete" (click)="tryDelete()">
+            Delete
+          </button>
+        </div>
+      }
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" data-testid="location-form-cancel" (click)="cancel()">Cancel</button>
+      <button type="submit" class="btn btn-primary" data-testid="location-form-submit">
+        {{ isEdit ? 'Save changes' : 'Create location' }}
+      </button>
+    </div>
+  </form>
+</section>

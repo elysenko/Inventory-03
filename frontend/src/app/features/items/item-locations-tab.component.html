@@ -1,0 +1,46 @@
+<div class="card" data-testid="item-locations-tab">
+  <div class="card-header">
+    <h2>Stock by location</h2>
+    <span class="page-subtitle">{{ rows().length }} location(s)</span>
+  </div>
+
+  @if (rows().length === 0) {
+    <div class="state" data-testid="item-locations-empty">
+      <span class="state-title">No stock recorded anywhere</span>
+      <span>This item has no stock rows yet, so it counts as below its reorder point.</span>
+      <a class="btn btn-primary" routerLink="/movements/new" data-testid="item-locations-record">Record a stock-in</a>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table" data-testid="item-locations-table">
+        <thead>
+          <tr>
+            <th>Location</th>
+            <th>Zone</th>
+            <th class="num">Quantity</th>
+            <th class="num">Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.id) {
+            <tr [attr.data-testid]="'stock-row-' + row.locationId">
+              <td>
+                <a class="link" [routerLink]="['/locations', row.locationId, 'edit']">{{ row.locationName }}</a>
+              </td>
+              <td><span class="badge badge-neutral">{{ row.locationZone }}</span></td>
+              <td class="num">{{ row.qty }}</td>
+              <td class="num muted">{{ total() ? ((row.qty / total()) * 100 | number: '1.0-0') : 0 }}%</td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Total on hand</td>
+            <td class="num" data-testid="item-locations-total">{{ total() }}</td>
+            <td class="num">100%</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  }
+</div>

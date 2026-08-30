@@ -1,0 +1,79 @@
+<section class="page narrow" data-testid="item-form-page">
+  <a class="back" routerLink="/items">&larr; All items</a>
+
+  <header class="page-head">
+    <div>
+      <h1>{{ isEdit ? 'Edit item' : 'New item' }}</h1>
+      <p class="page-subtitle">
+        {{ isEdit ? 'Catalogue changes apply immediately; stock balances are unaffected.' : 'Managers only. The SKU must be unique across the catalogue.' }}
+      </p>
+    </div>
+  </header>
+
+  @if (formError()) {
+    <div class="alert alert-error" role="alert" data-testid="item-form-error">{{ formError() }}</div>
+  }
+
+  <form class="card" (ngSubmit)="submit()">
+    <div class="card-body">
+      <div class="field">
+        <label for="item-sku">SKU</label>
+        <input
+          id="item-sku"
+          class="input mono-input"
+          [class.is-invalid]="!!skuError()"
+          type="text"
+          name="sku"
+          data-testid="item-form-sku"
+          placeholder="SKU-009"
+          [ngModel]="sku()"
+          (ngModelChange)="sku.set($event); skuError.set(null)"
+        />
+        @if (skuError()) {
+          <span class="field-error" data-testid="item-form-sku-error">{{ skuError() }}</span>
+        } @else {
+          <span class="field-hint">Try <strong>SKU-001</strong> to see the duplicate-SKU error.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="item-name">Name</label>
+        <input id="item-name" class="input" type="text" name="name" data-testid="item-form-name"
+          [ngModel]="name()" (ngModelChange)="name.set($event)" placeholder="Steel bracket 40mm" />
+      </div>
+
+      <div class="field">
+        <label for="item-description">Description</label>
+        <textarea id="item-description" class="textarea" name="description" data-testid="item-form-description"
+          [ngModel]="description()" (ngModelChange)="description.set($event)"
+          placeholder="Optional detail shown on the item page"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="item-unit">Unit</label>
+          <select id="item-unit" class="select" name="unit" data-testid="item-form-unit"
+            [ngModel]="unit()" (ngModelChange)="unit.set($event)">
+            @for (option of units; track option) {
+              <option [value]="option">{{ option }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="item-reorder">Reorder point</label>
+          <input id="item-reorder" class="input" type="number" min="0" name="reorderAt" data-testid="item-form-reorder"
+            [ngModel]="reorderAt()" (ngModelChange)="reorderAt.set(+$event)" />
+          <span class="field-hint">Flagged as low when total on hand is at or below this number.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" data-testid="item-form-cancel" (click)="cancel()">Cancel</button>
+      <button type="submit" class="btn btn-primary" data-testid="item-form-submit" [disabled]="saving()">
+        {{ isEdit ? 'Save changes' : 'Create item' }}
+      </button>
+    </div>
+  </form>
+</section>

@@ -2,10 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>App</title>
+    <title>StockRoom</title>
     <base href="/" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="StockRoom — inventory, stock movements and low-stock reporting." />
+    <meta name="theme-color" content="#1d4ed8" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <script>
+      /*
+       * Portable base href. The mockup is served either at the origin root or
+       * under /<mockup_id>/. Rewriting <base> before the bundle <script> tags
+       * are parsed lets the same build work at either path — relative asset
+       * URLs and the router both resolve against it.
+       */
+      (function () {
+        var appRoutes = ['', 'login', 'signup', 'items', 'locations', 'movements', 'reports', 'admin'];
+        var segment = location.pathname.split('/')[1] || '';
+        if (appRoutes.indexOf(segment) === -1) {
+          document.querySelector('base').setAttribute('href', '/' + segment + '/');
+        }
+      })();
+    </script>
   </head>
   <body>
     <app-root></app-root>

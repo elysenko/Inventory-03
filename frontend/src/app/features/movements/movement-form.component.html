@@ -1,0 +1,170 @@
+<section class="page narrow" data-testid="movement-form-page">
+  <a class="back" routerLink="/items">&larr; Cancel and return to items</a>
+
+  <header class="page-head">
+    <div>
+      <h1>Record a movement</h1>
+      <p class="page-subtitle">Every step is bookmarkable — this wizard restores itself from the URL.</p>
+    </div>
+  </header>
+
+  <ol class="steps" data-testid="movement-steps">
+    @for (label of ['Item', 'Type and locations', 'Quantity and confirm']; track label; let i = $index) {
+      <li class="step" [class.is-active]="step() === i + 1" [class.is-done]="step() > i + 1">
+        <button type="button" class="step-btn" [attr.data-testid]="'movement-step-' + (i + 1)" (click)="goToStep(i + 1)">
+          <span class="step-num">{{ i + 1 }}</span>
+          <span class="step-label">{{ label }}</span>
+        </button>
+      </li>
+    }
+  </ol>
+
+  <!-- ---------------- Step 1: choose the item ---------------- -->
+  @if (step() === 1) {
+    <div class="card" data-testid="movement-step1">
+      <div class="card-header"><h2>Which item?</h2></div>
+      <div class="card-body">
+        <div class="field">
+          <label for="movement-item-search">Search the catalogue</label>
+          <input id="movement-item-search" class="input" type="search" placeholder="SKU or name…"
+            data-testid="movement-item-search" [value]="search()" (input)="search.set($any($event.target).value)" />
+        </div>
+
+        @if (filteredItems().length === 0) {
+          <div class="state"><span class="state-title">No items match “{{ search() }}”</span></div>
+        } @else {
+          <ul class="picker">
+            @for (item of filteredItems(); track item.id) {
+              <li>
+                <button type="button" class="pick" [class.is-selected]="item.id === itemId()"
+                  [attr.data-testid]="'movement-pick-' + item.sku" (click)="chooseItem(item.id)">
+                  <span class="pick-main">
+                    <span class="mono pick-sku">{{ item.sku }}</span>
+                    <span class="pick-name">{{ item.name }}</span>
+                  </span>
+                  <span class="pick-qty">{{ item.totalOnHand }} {{ item.unit }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ---------------- Step 2: type and locations ---------------- -->
+  @if (step() === 2) {
+    <div class="card" data-testid="movement-step2">
+      <div class="card-header">
+        <h2>What kind of movement?</h2>
+        <span class="page-subtitle">{{ selectedItem()?.sku }} · {{ selectedItem()?.name }}</span>
+      </div>
+      <div class="card-body">
+        <div class="types">
+          @for (option of ['IN', 'OUT', 'TRANSFER']; track option) {
+            <button type="button" class="type" [class.is-selected]="type() === $any(option)"
+              [attr.data-testid]="'movement-type-' + option" (click)="chooseType($any(option))">
+              <span class="type-title">{{ typeLabel($any(option)) }}</span>
+              <span class="type-hint">{{ typeHint($any(option)) }}</span>
+            </button>
+          }
+        </div>
+
+        <div class="row">
+          @if (needsFrom()) {
+            <div class="field">
+              <label for="movement-from">From location</label>
+              <select id="movement-from" class="select" [class.is-invalid]="sameLocation()"
+                data-testid="movement-from" (change)="setFrom($any($event.target).value)">
+                @for (location of locations(); track location.id) {
+                  <option [value]="location.id" [selected]="location.id === fromLocId()">
+                    {{ location.name }} — {{ balanceAt(location.id) }} on hand
+                  </option>
+                }
+              </select>
+            </div>
+          }
+
+          @if (needsTo()) {
+            <div class="field">
+              <label for="movement-to">To location</label>
+              <select id="movement-to" class="select" [class.is-invalid]="sameLocation()"
+                data-testid="movement-to" (change)="setTo($any($event.target).value)">
+                @for (location of locations(); track location.id) {
+                  <option [value]="location.id" [selected]="location.id === toLocId()">
+                    {{ location.name }} — {{ balanceAt(location.id) }} on hand
+                  </option>
+                }
+              </select>
+            </div>
+          }
+        </div>
+
+        @if (sameLocation()) {
+          <div class="alert alert-error" role="alert" data-testid="movement-same-location-error">
+            A transfer must move stock between two <strong>different</strong> locations.
+          </div>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" data-testid="movement-back-1" (click)="goToStep(1)">Back</button>
+        <button type="button" class="btn btn-primary" data-testid="movement-next-3" [disabled]="!stepTwoValid()"
+          (click)="goToStep(3)">Continue</button>
+      </div>
+    </div>
+  }
+
+  <!-- ---------------- Step 3: quantity, note, confirm ---------------- -->
+  @if (step() === 3) {
+    <div class="card" data-testid="movement-step3">
+      <div class="card-header"><h2>Quantity &amp; confirmation</h2></div>
+      <div class="card-body">
+        <dl class="summary" data-testid="movement-summary">
+          <div><dt>Item</dt><dd>{{ selectedItem()?.sku }} — {{ selectedItem()?.name }}</dd></div>
+          <div><dt>Type</dt><dd><span class="badge" [class.badge-in]="type() === 'IN'"
+            [class.badge-out]="type() === 'OUT'" [class.badge-transfer]="type() === 'TRANSFER'">{{ type() }}</span></dd></div>
+          <div><dt>From</dt><dd>{{ needsFrom() ? locationName(fromLocId()) : '—' }}</dd></div>
+          <div><dt>To</dt><dd>{{ needsTo() ? locationName(toLocId()) : '—' }}</dd></div>
+        </dl>
+
+        @if (sourceBalance() !== null) {
+          <div class="alert alert-info" data-testid="movement-source-balance">
+            {{ locationName(fromLocId()) }} currently holds
+            <strong>{{ sourceBalance() }} {{ selectedItem()?.unit }}</strong> of this item.
+          </div>
+        }
+
+        <div class="field">
+          <label for="movement-qty">Quantity</label>
+          <input id="movement-qty" class="input" type="number" min="1" data-testid="movement-qty"
+            [class.is-invalid]="insufficient()" [value]="qty()" (input)="setQty(+$any($event.target).value)" />
+          @if (insufficient()) {
+            <span class="field-error" data-testid="movement-qty-error">
+              Only {{ sourceBalance() }} available at {{ locationName(fromLocId()) }}.
+            </span>
+          } @else {
+            <span class="field-hint">Whole units of {{ selectedItem()?.unit }}, minimum 1.</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="movement-note">Note (optional)</label>
+          <textarea id="movement-note" class="textarea" data-testid="movement-note" placeholder="Works order, PO number…"
+            [value]="note()" (change)="setNote($any($event.target).value)"></textarea>
+        </div>
+
+        @if (submitError()) {
+          <div class="alert alert-error" role="alert" data-testid="movement-submit-error">{{ submitError() }}</div>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" data-testid="movement-back-2" (click)="goToStep(2)">Back</button>
+        <button type="button" class="btn btn-primary" data-testid="movement-submit" (click)="submit()">
+          Record movement
+        </button>
+      </div>
+    </div>
+  }
+</section>

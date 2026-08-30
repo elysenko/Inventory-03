@@ -1,0 +1,67 @@
+<section class="page" data-testid="item-detail-page">
+  @if (item(); as current) {
+    <a class="back" routerLink="/items" data-testid="item-detail-back">&larr; All items</a>
+
+    <header class="page-head">
+      <div>
+        <span class="mono sku" data-testid="item-detail-sku">{{ current.sku }}</span>
+        <h1 data-testid="item-detail-name">{{ current.name }}</h1>
+        <p class="page-subtitle">{{ current.description }}</p>
+      </div>
+      <div class="head-actions">
+        <a class="btn btn-secondary" [routerLink]="['/movements/new']" [queryParams]="{ itemId: current.id, step: 2 }" data-testid="item-detail-record">
+          Record movement
+        </a>
+        @if (auth.isManager()) {
+          <a class="btn btn-primary" [routerLink]="['/items', current.id, 'edit']" data-testid="item-detail-edit">Edit item</a>
+        }
+      </div>
+    </header>
+
+    <div class="stats">
+      <div class="stat" data-testid="stat-on-hand">
+        <span class="stat-label">Total on hand</span>
+        <span class="stat-value">{{ current.totalOnHand }} <small>{{ current.unit }}</small></span>
+      </div>
+      <div class="stat" data-testid="stat-reorder">
+        <span class="stat-label">Reorder point</span>
+        <span class="stat-value">{{ current.reorderAt }}</span>
+      </div>
+      <div class="stat" data-testid="stat-status">
+        <span class="stat-label">Status</span>
+        <span class="stat-value">
+          @if (current.totalOnHand === 0) {
+            <span class="badge badge-out">Out of stock</span>
+          } @else if (isLow()) {
+            <span class="badge badge-low">Low stock</span>
+          } @else {
+            <span class="badge badge-ok">In stock</span>
+          }
+        </span>
+      </div>
+    </div>
+
+    @if (isLow()) {
+      <div class="alert alert-warn" data-testid="item-detail-low-alert">
+        On hand ({{ current.totalOnHand }}) is at or below the reorder point ({{ current.reorderAt }}). This item
+        appears on the low-stock report.
+      </div>
+    }
+
+    <nav class="tabs" data-testid="item-detail-tabs" aria-label="Item detail sections">
+      <a class="tab" [routerLink]="['/items', current.id, 'locations']" routerLinkActive="is-active" data-testid="tab-locations">
+        By location
+      </a>
+      <a class="tab" [routerLink]="['/items', current.id, 'movements']" routerLinkActive="is-active" data-testid="tab-movements">
+        Movement history
+      </a>
+    </nav>
+
+    <router-outlet />
+  } @else {
+    <div class="state" data-testid="item-detail-empty">
+      <span class="state-title">Item not found</span>
+      <a class="btn btn-secondary" routerLink="/items">Back to items</a>
+    </div>
+  }
+</section>

@@ -1,0 +1,18 @@
+.item-name { display: block; font-weight: var(--fw-medium); color: var(--color-text); }
+.item-name:hover { color: var(--color-primary); }
+.item-desc { display: block; font-size: var(--fs-xs); color: var(--color-text-subtle); }
+.strong { font-weight: var(--fw-semibold); }
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.pager-label { font-size: var(--fs-sm); color: var(--color-text-muted); }
+
+@media (max-width: 768px) {
+  .pager .btn { flex: 1; }
+}

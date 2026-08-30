@@ -1,21 +1,785 @@
 {
   "_generated": true,
   "_scaffolded_at": "2026-08-30T15:57:00Z",
-  "fileBudget": { "maxLines": 400, "hardLimit": 500 },
+  "fileBudget": {
+    "maxLines": 400,
+    "hardLimit": 500
+  },
   "routes": [
-    { "method": "GET", "path": "/health" },
-    { "method": "GET", "path": "/trpc/users.findAll" },
-    { "method": "GET", "path": "/trpc/users.findById" }
+    {
+      "method": "GET",
+      "path": "/api/health"
+    },
+    {
+      "method": "GET",
+      "path": "/api/health/deep"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signup"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/items"
+    },
+    {
+      "method": "POST",
+      "path": "/api/items"
+    },
+    {
+      "method": "GET",
+      "path": "/api/items/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/items/:id"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/items/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/api/items/:id/movements"
+    },
+    {
+      "method": "GET",
+      "path": "/api/locations"
+    },
+    {
+      "method": "POST",
+      "path": "/api/locations"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/locations/:id"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/locations/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/api/movements"
+    },
+    {
+      "method": "GET",
+      "path": "/api/movements"
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports/low-stock"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/settings"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/settings"
+    }
+  ],
+  "screens": [
+    {
+      "route": "/login",
+      "flow": "auth.login",
+      "guard": "public"
+    },
+    {
+      "route": "/signup",
+      "flow": "auth.signup",
+      "guard": "public"
+    },
+    {
+      "route": "/items",
+      "flow": "items.list",
+      "guard": "auth"
+    },
+    {
+      "route": "/items/new",
+      "flow": "items.create",
+      "guard": "manager"
+    },
+    {
+      "route": "/items/:id",
+      "flow": "items.detail",
+      "guard": "auth"
+    },
+    {
+      "route": "/items/:id/locations",
+      "flow": "items.detail.locations",
+      "guard": "auth"
+    },
+    {
+      "route": "/items/:id/movements",
+      "flow": "items.detail.movements",
+      "guard": "auth"
+    },
+    {
+      "route": "/items/:id/edit",
+      "flow": "items.edit",
+      "guard": "manager"
+    },
+    {
+      "route": "/locations",
+      "flow": "locations.list",
+      "guard": "auth"
+    },
+    {
+      "route": "/locations/new",
+      "flow": "locations.create",
+      "guard": "manager"
+    },
+    {
+      "route": "/locations/:id/edit",
+      "flow": "locations.edit",
+      "guard": "manager"
+    },
+    {
+      "route": "/movements/new",
+      "flow": "movements.create",
+      "guard": "auth"
+    },
+    {
+      "route": "/movements",
+      "flow": "movements.log",
+      "guard": "manager"
+    },
+    {
+      "route": "/reports/low-stock",
+      "flow": "reports.lowStock",
+      "guard": "manager"
+    },
+    {
+      "route": "/admin/settings",
+      "flow": "admin.settings",
+      "guard": "manager"
+    }
   ],
   "components": [
-    { "selector": "app-root", "file": "frontend/src/app/app.component.ts", "maxLines": 400 },
-    { "selector": "app-home", "file": "frontend/src/app/home/home.component.ts", "maxLines": 400 }
+    {
+      "selector": "app-root",
+      "file": "frontend/src/app/app.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-login",
+      "file": "frontend/src/app/features/auth/login.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-signup",
+      "file": "frontend/src/app/features/auth/signup.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-item-list",
+      "file": "frontend/src/app/features/items/item-list.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-item-detail",
+      "file": "frontend/src/app/features/items/item-detail.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-item-locations-tab",
+      "file": "frontend/src/app/features/items/item-locations-tab.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-item-movements-tab",
+      "file": "frontend/src/app/features/items/item-movements-tab.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-item-form",
+      "file": "frontend/src/app/features/items/item-form.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-location-list",
+      "file": "frontend/src/app/features/locations/location-list.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-location-form",
+      "file": "frontend/src/app/features/locations/location-form.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-movement-form",
+      "file": "frontend/src/app/features/movements/movement-form.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-movement-log",
+      "file": "frontend/src/app/features/movements/movement-log.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-low-stock",
+      "file": "frontend/src/app/features/reports/low-stock.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-settings",
+      "file": "frontend/src/app/features/admin/settings.component.ts",
+      "maxLines": 400
+    }
   ],
   "testIds": [
-    { "id": "home-main", "element": "main", "component": "app-home" },
-    { "id": "home-title", "element": "h1", "component": "app-home" },
-    { "id": "users-loading", "element": "p", "component": "app-home" },
-    { "id": "users-error", "element": "p", "component": "app-home" },
-    { "id": "users-list", "element": "ul", "component": "app-home" }
+    {
+      "id": "app-ready",
+      "template": "frontend/src/app/app.component.html"
+    },
+    {
+      "id": "nav-drawer-toggle",
+      "template": "frontend/src/app/app.component.html"
+    },
+    {
+      "id": "app-wordmark",
+      "template": "frontend/src/app/app.component.html"
+    },
+    {
+      "id": "role-switch",
+      "template": "frontend/src/app/app.component.html"
+    },
+    {
+      "id": "logout-button",
+      "template": "frontend/src/app/app.component.html"
+    },
+    {
+      "id": "nav-scrim",
+      "template": "frontend/src/app/app.component.html"
+    },
+    {
+      "id": "nav-drawer-close",
+      "template": "frontend/src/app/app.component.html"
+    },
+    {
+      "id": "app-content",
+      "template": "frontend/src/app/app.component.html"
+    },
+    {
+      "id": "fab-record-movement",
+      "template": "frontend/src/app/app.component.html"
+    },
+    {
+      "id": "admin-settings-page",
+      "template": "frontend/src/app/features/admin/settings.component.html"
+    },
+    {
+      "id": "settings-unconfigured-banner",
+      "template": "frontend/src/app/features/admin/settings.component.html"
+    },
+    {
+      "id": "settings-saved",
+      "template": "frontend/src/app/features/admin/settings.component.html"
+    },
+    {
+      "id": "login-screen",
+      "template": "frontend/src/app/features/auth/login.component.html"
+    },
+    {
+      "id": "login-wordmark",
+      "template": "frontend/src/app/features/auth/login.component.html"
+    },
+    {
+      "id": "demo-manager",
+      "template": "frontend/src/app/features/auth/login.component.html"
+    },
+    {
+      "id": "demo-clerk",
+      "template": "frontend/src/app/features/auth/login.component.html"
+    },
+    {
+      "id": "login-error",
+      "template": "frontend/src/app/features/auth/login.component.html"
+    },
+    {
+      "id": "login-email",
+      "template": "frontend/src/app/features/auth/login.component.html"
+    },
+    {
+      "id": "login-password",
+      "template": "frontend/src/app/features/auth/login.component.html"
+    },
+    {
+      "id": "login-submit",
+      "template": "frontend/src/app/features/auth/login.component.html"
+    },
+    {
+      "id": "login-skip",
+      "template": "frontend/src/app/features/auth/login.component.html"
+    },
+    {
+      "id": "link-signup",
+      "template": "frontend/src/app/features/auth/login.component.html"
+    },
+    {
+      "id": "signup-screen",
+      "template": "frontend/src/app/features/auth/signup.component.html"
+    },
+    {
+      "id": "signup-wordmark",
+      "template": "frontend/src/app/features/auth/signup.component.html"
+    },
+    {
+      "id": "signup-error",
+      "template": "frontend/src/app/features/auth/signup.component.html"
+    },
+    {
+      "id": "signup-name",
+      "template": "frontend/src/app/features/auth/signup.component.html"
+    },
+    {
+      "id": "signup-email",
+      "template": "frontend/src/app/features/auth/signup.component.html"
+    },
+    {
+      "id": "signup-password",
+      "template": "frontend/src/app/features/auth/signup.component.html"
+    },
+    {
+      "id": "signup-confirm",
+      "template": "frontend/src/app/features/auth/signup.component.html"
+    },
+    {
+      "id": "signup-submit",
+      "template": "frontend/src/app/features/auth/signup.component.html"
+    },
+    {
+      "id": "signup-skip",
+      "template": "frontend/src/app/features/auth/signup.component.html"
+    },
+    {
+      "id": "link-login",
+      "template": "frontend/src/app/features/auth/signup.component.html"
+    },
+    {
+      "id": "item-detail-page",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "item-detail-back",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "item-detail-sku",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "item-detail-name",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "item-detail-record",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "item-detail-edit",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "stat-on-hand",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "stat-reorder",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "stat-status",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "item-detail-low-alert",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "item-detail-tabs",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "tab-locations",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "tab-movements",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "item-detail-empty",
+      "template": "frontend/src/app/features/items/item-detail.component.html"
+    },
+    {
+      "id": "item-form-page",
+      "template": "frontend/src/app/features/items/item-form.component.html"
+    },
+    {
+      "id": "item-form-error",
+      "template": "frontend/src/app/features/items/item-form.component.html"
+    },
+    {
+      "id": "item-form-sku",
+      "template": "frontend/src/app/features/items/item-form.component.html"
+    },
+    {
+      "id": "item-form-sku-error",
+      "template": "frontend/src/app/features/items/item-form.component.html"
+    },
+    {
+      "id": "item-form-name",
+      "template": "frontend/src/app/features/items/item-form.component.html"
+    },
+    {
+      "id": "item-form-description",
+      "template": "frontend/src/app/features/items/item-form.component.html"
+    },
+    {
+      "id": "item-form-unit",
+      "template": "frontend/src/app/features/items/item-form.component.html"
+    },
+    {
+      "id": "item-form-reorder",
+      "template": "frontend/src/app/features/items/item-form.component.html"
+    },
+    {
+      "id": "item-form-cancel",
+      "template": "frontend/src/app/features/items/item-form.component.html"
+    },
+    {
+      "id": "item-form-submit",
+      "template": "frontend/src/app/features/items/item-form.component.html"
+    },
+    {
+      "id": "items-page",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "item-new-button",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "items-search",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "items-low-stock-toggle",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "items-clear-filters",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "items-loading",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "items-error",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "items-empty",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "items-table",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "badge-out-of-stock",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "badge-low-stock",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "items-pagination",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "items-prev-page",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "items-next-page",
+      "template": "frontend/src/app/features/items/item-list.component.html"
+    },
+    {
+      "id": "item-locations-tab",
+      "template": "frontend/src/app/features/items/item-locations-tab.component.html"
+    },
+    {
+      "id": "item-locations-empty",
+      "template": "frontend/src/app/features/items/item-locations-tab.component.html"
+    },
+    {
+      "id": "item-locations-record",
+      "template": "frontend/src/app/features/items/item-locations-tab.component.html"
+    },
+    {
+      "id": "item-locations-table",
+      "template": "frontend/src/app/features/items/item-locations-tab.component.html"
+    },
+    {
+      "id": "item-locations-total",
+      "template": "frontend/src/app/features/items/item-locations-tab.component.html"
+    },
+    {
+      "id": "item-movements-tab",
+      "template": "frontend/src/app/features/items/item-movements-tab.component.html"
+    },
+    {
+      "id": "item-movements-empty",
+      "template": "frontend/src/app/features/items/item-movements-tab.component.html"
+    },
+    {
+      "id": "item-movements-table",
+      "template": "frontend/src/app/features/items/item-movements-tab.component.html"
+    },
+    {
+      "id": "location-form-page",
+      "template": "frontend/src/app/features/locations/location-form.component.html"
+    },
+    {
+      "id": "location-form-delete-blocked",
+      "template": "frontend/src/app/features/locations/location-form.component.html"
+    },
+    {
+      "id": "location-form-name",
+      "template": "frontend/src/app/features/locations/location-form.component.html"
+    },
+    {
+      "id": "location-form-name-error",
+      "template": "frontend/src/app/features/locations/location-form.component.html"
+    },
+    {
+      "id": "location-form-zone",
+      "template": "frontend/src/app/features/locations/location-form.component.html"
+    },
+    {
+      "id": "location-form-delete",
+      "template": "frontend/src/app/features/locations/location-form.component.html"
+    },
+    {
+      "id": "location-form-cancel",
+      "template": "frontend/src/app/features/locations/location-form.component.html"
+    },
+    {
+      "id": "location-form-submit",
+      "template": "frontend/src/app/features/locations/location-form.component.html"
+    },
+    {
+      "id": "locations-page",
+      "template": "frontend/src/app/features/locations/location-list.component.html"
+    },
+    {
+      "id": "location-new-button",
+      "template": "frontend/src/app/features/locations/location-list.component.html"
+    },
+    {
+      "id": "location-delete-blocked",
+      "template": "frontend/src/app/features/locations/location-list.component.html"
+    },
+    {
+      "id": "locations-search",
+      "template": "frontend/src/app/features/locations/location-list.component.html"
+    },
+    {
+      "id": "locations-loading",
+      "template": "frontend/src/app/features/locations/location-list.component.html"
+    },
+    {
+      "id": "locations-error",
+      "template": "frontend/src/app/features/locations/location-list.component.html"
+    },
+    {
+      "id": "locations-empty",
+      "template": "frontend/src/app/features/locations/location-list.component.html"
+    },
+    {
+      "id": "locations-table",
+      "template": "frontend/src/app/features/locations/location-list.component.html"
+    },
+    {
+      "id": "movement-form-page",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-steps",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-step1",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-item-search",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-step2",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-from",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-to",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-same-location-error",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-back-1",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-next-3",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-step3",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-summary",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-source-balance",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-qty",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-qty-error",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-note",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-submit-error",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-back-2",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-submit",
+      "template": "frontend/src/app/features/movements/movement-form.component.html"
+    },
+    {
+      "id": "movement-log-page",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "movement-log-record",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "log-filter-item",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "log-filter-type",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "log-filter-from",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "log-filter-to",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "log-clear-filters",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "log-loading",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "log-error",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "log-empty",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "movement-log-table",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "log-pagination",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "log-prev-page",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "log-next-page",
+      "template": "frontend/src/app/features/movements/movement-log.component.html"
+    },
+    {
+      "id": "low-stock-page",
+      "template": "frontend/src/app/features/reports/low-stock.component.html"
+    },
+    {
+      "id": "low-stock-open-items",
+      "template": "frontend/src/app/features/reports/low-stock.component.html"
+    },
+    {
+      "id": "low-stock-count",
+      "template": "frontend/src/app/features/reports/low-stock.component.html"
+    },
+    {
+      "id": "low-stock-out",
+      "template": "frontend/src/app/features/reports/low-stock.component.html"
+    },
+    {
+      "id": "low-stock-shortfall",
+      "template": "frontend/src/app/features/reports/low-stock.component.html"
+    },
+    {
+      "id": "low-stock-loading",
+      "template": "frontend/src/app/features/reports/low-stock.component.html"
+    },
+    {
+      "id": "low-stock-error",
+      "template": "frontend/src/app/features/reports/low-stock.component.html"
+    },
+    {
+      "id": "low-stock-empty",
+      "template": "frontend/src/app/features/reports/low-stock.component.html"
+    },
+    {
+      "id": "low-stock-table",
+      "template": "frontend/src/app/features/reports/low-stock.component.html"
+    }
   ]
 }

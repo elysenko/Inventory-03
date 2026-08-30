@@ -1,0 +1,73 @@
+<section class="page narrow" data-testid="admin-settings-page">
+  <header class="page-head">
+    <div>
+      <h1>Admin settings</h1>
+      <p class="page-subtitle">
+        Managers only · credentials for the services provisioned alongside StockRoom. Values set here override the
+        environment at runtime.
+      </p>
+    </div>
+  </header>
+
+  @if (unconfigured().length > 0) {
+    <div class="alert alert-warn" role="status" data-testid="settings-unconfigured-banner">
+      <span>
+        The following need credentials to activate:
+        <strong>{{ unconfigured()[0].label }}{{ unconfigured().length > 1 ? ' and ' + (unconfigured().length - 1) + ' more' : '' }}</strong>.
+      </span>
+    </div>
+  }
+
+  @if (saved()) {
+    <div class="alert alert-info" role="status" data-testid="settings-saved">{{ saved() }}</div>
+  }
+
+  @for (group of groups(); track group.service) {
+    <div class="card service" [attr.data-testid]="'settings-service-' + group.service">
+      <div class="card-header">
+        <div>
+          <h2>{{ group.label }}</h2>
+          <p class="page-subtitle">{{ group.blurb }}</p>
+        </div>
+        <span
+          class="badge"
+          [class.badge-ok]="group.configured"
+          [class.badge-low]="!group.configured"
+          [attr.data-testid]="'settings-status-' + group.service"
+        >
+          {{ group.configured ? 'Configured' : 'Needs credentials' }}
+        </span>
+      </div>
+
+      <div class="card-body">
+        @for (entry of group.entries; track entry.key) {
+          <div class="field">
+            <label [attr.for]="'setting-' + entry.key">
+              {{ entry.label }} <span class="key mono">{{ entry.key }}</span>
+            </label>
+            <input
+              [id]="'setting-' + entry.key"
+              class="input"
+              [type]="entry.secret ? 'password' : 'text'"
+              [attr.data-testid]="'setting-input-' + entry.key"
+              [placeholder]="entry.configured ? 'Set — leave blank to keep' : 'Not configured'"
+              [ngModel]="entry.value"
+              [name]="entry.key"
+              (ngModelChange)="updateValue(entry.key, $event)"
+            />
+            @if (entry.secret) {
+              <span class="field-hint">Stored masked; the saved value is never returned by the API.</span>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" [attr.data-testid]="'settings-save-' + group.service"
+          (click)="save(group)">
+          Save {{ group.label }} credentials
+        </button>
+      </div>
+    </div>
+  }
+</section>
